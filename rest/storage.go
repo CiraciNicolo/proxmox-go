@@ -51,7 +51,7 @@ func (c *RESTClient) DeleteStorage(ctx context.Context, name string) error {
 	return nil
 }
 
-// TODO: Add other parameters such as checksum
+// UploadToStorage TODO: Add other parameters such as checksum
 func (c *RESTClient) UploadToStorage(ctx context.Context, option api.StorageUpload, filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
