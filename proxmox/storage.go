@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/sp-yduck/proxmox-go/api"
 	"github.com/sp-yduck/proxmox-go/rest"
 )
@@ -27,7 +26,7 @@ func (s *Service) CreateStorage(ctx context.Context, name, storageType string, o
 	var storage *api.Storage
 	options.Storage = name
 	options.StorageType = storageType
-	if err := s.restclient.Post(ctx, "/storage", options, &storage); err != nil {
+	if err := s.restclient.Post(ctx, "/storage", options, nil, &storage); err != nil {
 		return nil, err
 	}
 	return &Storage{restclient: s.restclient, Storage: storage}, nil
@@ -71,11 +70,21 @@ func (s *Storage) GetVolume(ctx context.Context, volumeID string) (*api.StorageV
 	return volume, nil
 }
 
-// to do : taskid
+// DeleteVolume TODO: taskid
 func (s *Storage) DeleteVolume(ctx context.Context, volumeID string) error {
 	path := fmt.Sprintf("/nodes/%s/storage/%s/content/%s", s.Node, s.Storage.Storage, volumeID)
 	var taskid string
 	if err := s.restclient.Delete(ctx, path, nil, &taskid); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) Upload(ctx context.Context, option api.StorageUpload, filePath string) error {
+	option.Node = s.Node
+	option.Storage = s.Storage.Storage
+
+	if err := s.restclient.UploadToStorage(ctx, option, filePath); err != nil {
 		return err
 	}
 	return nil

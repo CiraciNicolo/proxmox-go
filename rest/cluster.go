@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"github.com/sp-yduck/proxmox-go/api"
 )
 
 func (c *RESTClient) GetNextID(ctx context.Context) (int, error) {
@@ -15,4 +16,27 @@ func (c *RESTClient) GetNextID(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	return int(nextid), nil
+}
+
+func (c *RESTClient) GetStatus(ctx context.Context) ([]*api.ClusterStatus, error) {
+	var res []*api.ClusterStatus
+	if err := c.Get(ctx, "/cluster/status", &res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (c *RESTClient) GetLocalNode(ctx context.Context) (local *api.ClusterStatus, err error) {
+	nodes, err := c.GetStatus(ctx)
+	if err != nil {
+		return
+	}
+
+	for _, node := range nodes {
+		if node.Type == "node" && node.Local == 1 {
+			local = node
+		}
+	}
+
+	return
 }

@@ -32,7 +32,7 @@ func (c *RESTClient) GetNode(ctx context.Context, name string) (*api.Node, error
 func (c *RESTClient) CreateNodeTermProxy(ctx context.Context, nodeName string, option api.TermProxyOption) (*api.TermProxy, error) {
 	path := fmt.Sprintf("/nodes/%s/termproxy", nodeName)
 	var termProxy *api.TermProxy
-	if err := c.Post(ctx, path, option, &termProxy); err != nil {
+	if err := c.Post(ctx, path, option, nil, &termProxy); err != nil {
 		return nil, err
 	}
 	return termProxy, nil
@@ -41,7 +41,7 @@ func (c *RESTClient) CreateNodeTermProxy(ctx context.Context, nodeName string, o
 func (c *RESTClient) CreateNodeVNCShell(ctx context.Context, nodeName string, option api.VNCShellOption) (*api.TermProxy, error) {
 	path := fmt.Sprintf("/nodes/%s/vncshell", nodeName)
 	var termProxy *api.TermProxy
-	if err := c.Post(ctx, path, option, &termProxy); err != nil {
+	if err := c.Post(ctx, path, option, nil, &termProxy); err != nil {
 		return nil, err
 	}
 	return termProxy, nil

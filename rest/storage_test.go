@@ -71,3 +71,45 @@ func (s *TestSuite) TestCreateDeleteStorage() {
 		s.T().Fatalf("failed to delete storage(name=%s): %v", testStorageName, err)
 	}
 }
+
+func (s *TestSuite) TestCreateUploadDeleteStorage() {
+	testStorageName := "test-upload-proxmox-go"
+	s.EnsureNoStorage(testStorageName)
+
+	// create
+	mkdir := true
+	testOptions := api.StorageCreateOptions{
+		Content: "images,iso",
+		Mkdir:   &mkdir,
+		Path:    "/var/lib/vz/test",
+	}
+	storage, err := s.restclient.CreateStorage(context.TODO(), testStorageName, "dir", testOptions)
+	if err != nil {
+		s.T().Fatalf("failed to create storage(name=%s): %v", testStorageName, err)
+	}
+	s.T().Logf("create storage: %v", *storage)
+	time.Sleep(2 * time.Second)
+
+	if err != nil {
+		s.T().Fatalf("failed to get nodes: %v", err)
+	}
+
+	node, err := s.restclient.GetLocalNode(context.TODO())
+	uploadOptions := api.StorageUpload{
+		Content:  "iso",
+		Filename: "tlc.iso",
+		Node:     node.Name,
+		Storage:  testStorageName,
+	}
+	err = s.restclient.UploadToStorage(context.TODO(), uploadOptions, "../tlc.iso")
+	if err != nil {
+		s.T().Fatalf("failed to upload storage(name=%s): %v", testStorageName, err)
+	}
+	time.Sleep(2 * time.Second)
+
+	// delete
+	err = s.restclient.DeleteStorage(context.TODO(), testStorageName)
+	if err != nil {
+		s.T().Fatalf("failed to delete storage(name=%s): %v", testStorageName, err)
+	}
+}

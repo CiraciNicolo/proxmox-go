@@ -36,6 +36,12 @@ type TicketRequest struct {
 
 type ClientOption func(*RESTClient)
 
+type Body struct {
+	ContentType   string
+	ContentLength int64
+	Reader        io.Reader
+}
+
 func NewRESTClient(baseUrl string, opts ...ClientOption) (*RESTClient, error) {
 	client := &RESTClient{
 		endpoint:   complementURL(baseUrl),
@@ -94,24 +100,33 @@ func WithAPIToken(tokenid, secret string) ClientOption {
 	}
 }
 
-func (c *RESTClient) Do(ctx context.Context, httpMethod, urlPath string, req, v interface{}) error {
+func (c *RESTClient) Do(ctx context.Context, httpMethod, urlPath string, req interface{}, body *Body, v interface{}) error {
 	endpoint := c.endpoint + urlPath
 
-	var body io.Reader
-	if req != nil {
-		jsonReq, err := json.Marshal(req)
-		if err != nil {
-			return err
+	var b io.Reader
+	if body == nil {
+		if req != nil {
+			jsonReq, err := json.Marshal(req)
+			if err != nil {
+				return err
+			}
+			b = bytes.NewReader(jsonReq)
 		}
-		body = bytes.NewReader(jsonReq)
+	} else {
+		b = body.Reader
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, httpMethod, endpoint, body)
+	httpReq, err := http.NewRequestWithContext(ctx, httpMethod, endpoint, b)
 	if err != nil {
 		return err
 	}
 	httpReq.Header = c.makeAuthHeaders()
-	httpReq.Header.Add("Content-Type", "application/json")
+	if body == nil {
+		httpReq.Header.Add("Content-Type", "application/json")
+	} else {
+		httpReq.Header.Add("Content-Type", body.ContentType)
+		httpReq.ContentLength = body.ContentLength
+	}
 
 	httpRsp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -132,7 +147,7 @@ func (c *RESTClient) Do(ctx context.Context, httpMethod, urlPath string, req, v 
 		return err
 	}
 
-	// try unmarshalon {"data": any} firstly
+	// try unmarshal {"data": any} firstly
 	var datakey map[string]json.RawMessage
 	if err := json.Unmarshal(buf, &datakey); err != nil {
 		return err
@@ -145,19 +160,19 @@ func (c *RESTClient) Do(ctx context.Context, httpMethod, urlPath string, req, v 
 }
 
 func (c *RESTClient) Get(ctx context.Context, path string, res interface{}) error {
-	return c.Do(ctx, http.MethodGet, path, nil, res)
+	return c.Do(ctx, http.MethodGet, path, nil, nil, res)
 }
 
-func (c *RESTClient) Post(ctx context.Context, path string, req, res interface{}) error {
-	return c.Do(ctx, http.MethodPost, path, req, res)
+func (c *RESTClient) Post(ctx context.Context, path string, req interface{}, body *Body, res interface{}) error {
+	return c.Do(ctx, http.MethodPost, path, req, body, res)
 }
 
-func (c *RESTClient) Put(ctx context.Context, path string, req, res interface{}) error {
-	return c.Do(ctx, http.MethodPut, path, req, res)
+func (c *RESTClient) Put(ctx context.Context, path string, req interface{}, res interface{}) error {
+	return c.Do(ctx, http.MethodPut, path, req, nil, res)
 }
 
-func (c *RESTClient) Delete(ctx context.Context, path string, req, res interface{}) error {
-	return c.Do(ctx, http.MethodDelete, path, req, res)
+func (c *RESTClient) Delete(ctx context.Context, path string, req interface{}, res interface{}) error {
+	return c.Do(ctx, http.MethodDelete, path, req, nil, res)
 }
 
 func (c *RESTClient) makeAuthHeaders() http.Header {

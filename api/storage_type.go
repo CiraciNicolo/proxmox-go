@@ -123,3 +123,17 @@ type StorageVolume struct {
 	Size   int    `json:",omitempty"`
 	Used   int    `json:",omitempty"`
 }
+
+type StorageUpload struct {
+	// Enum: iso | vztmpl
+	Content  string `json:",omitempty"`
+	Filename string `json:",omitempty"`
+	Node     string `json:",omitempty"`
+	Storage  string `json:",omitempty"`
+	// Optional fields
+	Checksum string `json:",omitempty"`
+	// Enum: md5 | sha1 | sha224 | sha256 | sha384 | sha512
+	ChecksumAlgorithm string `json:"checksum-algorithm,omitempty"`
+	// Regex: /var/tmp/pveupload-[0-9a-f]+
+	Template string `json:"tmpfilename,omitempty"`
+}

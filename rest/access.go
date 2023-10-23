@@ -7,7 +7,7 @@ import (
 )
 
 func (c *RESTClient) PostTicket(ctx context.Context, req TicketRequest) (*api.Session, error) {
-	if err := c.Post(ctx, "/access/ticket", req, &c.session); err != nil {
+	if err := c.Post(ctx, "/access/ticket", req, nil, &c.session); err != nil {
 		return nil, err
 	}
 	return c.session, nil
