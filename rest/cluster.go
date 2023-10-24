@@ -40,3 +40,11 @@ func (c *RESTClient) GetLocalNode(ctx context.Context) (local *api.ClusterStatus
 
 	return
 }
+
+func (c *RESTClient) GetJoinConfig(ctx context.Context) (*api.ClusterJoinConfig, error) {
+	var config *api.ClusterJoinConfig
+	if err := c.Get(ctx, "/cluster/config/join", &config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
