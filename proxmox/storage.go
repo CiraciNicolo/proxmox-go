@@ -91,16 +91,18 @@ func (s *Storage) Upload(ctx context.Context, option api.StorageUpload, file io.
 	return nil
 }
 
-func (s *Storage) Download(ctx context.Context, option api.StorageDownload) (err error) {
+func (s *Storage) Download(ctx context.Context, option api.StorageDownload) error {
 	option.Node = s.Node
 	option.Storage = s.Storage.Storage
 	var taskid *string
+	var err error
 
 	if taskid, err = s.restclient.DownloadToStorage(ctx, option); err != nil {
-		return
+		return err
 	}
-	if err := s.EnsureTaskDone(ctx, s.Node, *taskid); err != nil {
-		return
+	if err = s.EnsureTaskDone(ctx, s.Node, *taskid); err != nil {
+		return err
 	}
-	return
+
+	return nil
 }
