@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/sp-yduck/proxmox-go/api"
 	"github.com/sp-yduck/proxmox-go/rest"
+	"io"
 )
 
 type Storage struct {
@@ -80,11 +81,11 @@ func (s *Storage) DeleteVolume(ctx context.Context, volumeID string) error {
 	return nil
 }
 
-func (s *Storage) Upload(ctx context.Context, option api.StorageUpload, filePath string) error {
+func (s *Storage) Upload(ctx context.Context, option api.StorageUpload, file io.Reader) error {
 	option.Node = s.Node
 	option.Storage = s.Storage.Storage
 
-	if err := s.restclient.UploadToStorage(ctx, option, filePath); err != nil {
+	if err := s.restclient.UploadToStorage(ctx, option, file); err != nil {
 		return err
 	}
 	return nil
