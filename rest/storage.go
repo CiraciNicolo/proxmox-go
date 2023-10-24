@@ -5,11 +5,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/sp-yduck/proxmox-go/api"
 	"io"
 	"mime/multipart"
 	"os"
-
-	"github.com/sp-yduck/proxmox-go/api"
 )
 
 func (c *RESTClient) GetStorages(ctx context.Context) ([]*api.Storage, error) {
@@ -52,18 +51,23 @@ func (c *RESTClient) DeleteStorage(ctx context.Context, name string) error {
 }
 
 // UploadToStorage TODO: Add other parameters such as checksum
-func (c *RESTClient) UploadToStorage(ctx context.Context, option api.StorageUpload, filePath string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return errors.Wrap(err, "unable to open file")
-	}
-	defer file.Close()
-	fileStat, err := file.Stat()
-
+func (c *RESTClient) UploadToStorage(ctx context.Context, option api.StorageUpload, file io.Reader) error {
 	var buf bytes.Buffer
+	var fileSize int64
 	body := Body{}
+
+	if f, s := file.(*os.File); s {
+		fs, err := f.Stat()
+		if err != nil {
+			return errors.Wrap(err, "unable to get file info")
+		}
+		fileSize = fs.Size()
+	} else {
+		return errors.New("unable to inspect file")
+	}
+
 	writer := multipart.NewWriter(&buf)
-	err = writer.WriteField("content", option.Content)
+	err := writer.WriteField("content", option.Content)
 	if err != nil {
 		return errors.Wrap(err, "unable to set content type")
 	}
@@ -86,7 +90,7 @@ func (c *RESTClient) UploadToStorage(ctx context.Context, option api.StorageUplo
 		file,
 		bytes.NewReader(buf.Bytes()[headerSize:]),
 	)
-	body.ContentLength = int64(buf.Len()) + fileStat.Size()
+	body.ContentLength = int64(buf.Len()) + fileSize
 
 	path := fmt.Sprintf("/nodes/%s/storage/%s/upload", option.Node, option.Storage)
 	if err := c.Post(ctx, path, option, &body, nil); err != nil {

@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/sp-yduck/proxmox-go/api"
@@ -101,7 +102,12 @@ func (s *TestSuite) TestCreateUploadDeleteStorage() {
 		Node:     node.Name,
 		Storage:  testStorageName,
 	}
-	err = s.restclient.UploadToStorage(context.TODO(), uploadOptions, "../tlc.iso")
+	f, err := os.Open("../tlc.iso")
+	if err != nil {
+		s.T().Fatalf("failed to open file(name=%s): %v", testStorageName, err)
+	}
+
+	err = s.restclient.UploadToStorage(context.TODO(), uploadOptions, f)
 	if err != nil {
 		s.T().Fatalf("failed to upload storage(name=%s): %v", testStorageName, err)
 	}
