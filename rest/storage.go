@@ -51,7 +51,7 @@ func (c *RESTClient) DeleteStorage(ctx context.Context, name string) error {
 }
 
 // UploadToStorage TODO: Add other parameters such as checksum
-func (c *RESTClient) UploadToStorage(ctx context.Context, option api.StorageUpload, file io.Reader) error {
+func (c *RESTClient) UploadToStorage(ctx context.Context, options api.StorageUpload, file io.Reader) error {
 	var buf bytes.Buffer
 	var fileSize int64
 	body := Body{}
@@ -67,12 +67,12 @@ func (c *RESTClient) UploadToStorage(ctx context.Context, option api.StorageUplo
 	}
 
 	writer := multipart.NewWriter(&buf)
-	err := writer.WriteField("content", option.Content)
+	err := writer.WriteField("content", options.Content)
 	if err != nil {
 		return errors.Wrap(err, "unable to set content type")
 	}
 
-	_, err = writer.CreateFormFile("filename", option.Filename)
+	_, err = writer.CreateFormFile("filename", options.Filename)
 	if err != nil {
 		return errors.Wrap(err, "unable to set filename")
 	}
@@ -92,9 +92,18 @@ func (c *RESTClient) UploadToStorage(ctx context.Context, option api.StorageUplo
 	)
 	body.ContentLength = int64(buf.Len()) + fileSize
 
-	path := fmt.Sprintf("/nodes/%s/storage/%s/upload", option.Node, option.Storage)
-	if err := c.Post(ctx, path, option, &body, nil); err != nil {
+	path := fmt.Sprintf("/nodes/%s/storage/%s/upload", options.Node, options.Storage)
+	if err := c.Post(ctx, path, options, &body, nil); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (c *RESTClient) DownloadToStorage(ctx context.Context, options api.StorageDownload) (*string, error) {
+	path := fmt.Sprintf("/nodes/%s/storage/%s/download-url", options.Node, options.Storage)
+	var upid *string
+	if err := c.Post(ctx, path, options, nil, &upid); err != nil {
+		return nil, err
+	}
+	return upid, nil
 }

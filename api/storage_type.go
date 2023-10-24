@@ -137,3 +137,18 @@ type StorageUpload struct {
 	// Regex: /var/tmp/pveupload-[0-9a-f]+
 	Template string `json:"tmpfilename,omitempty"`
 }
+
+type StorageDownload struct {
+	// Enum: iso | vztmpl
+	Content  string `json:"content,omitempty"`
+	Filename string `json:"filename,omitempty"`
+	Node     string `json:"node,omitempty"`
+	Storage  string `json:"storage,omitempty"`
+	// Regex: https?://.*
+	Url string `json:"url,omitempty"`
+	// Optional fields
+	Checksum string `json:"checksum,omitempty"`
+	// Enum: md5 | sha1 | sha224 | sha256 | sha384 | sha512
+	ChecksumAlgorithm  string `json:"checksum-algorithm,omitempty"`
+	VerifyCertificates bool   `json:"verify-certificates,omitempty"`
+}

@@ -10,9 +10,9 @@ import (
 )
 
 type Storage struct {
-	restclient *rest.RESTClient
-	Storage    *api.Storage
-	Node       string
+	Service
+	Storage *api.Storage
+	Node    string
 }
 
 func (s *Service) Storage(ctx context.Context, name string) (*Storage, error) {
@@ -20,7 +20,7 @@ func (s *Service) Storage(ctx context.Context, name string) (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Storage{restclient: s.restclient, Storage: storage}, nil
+	return &Storage{Service: *s, Storage: storage}, nil
 }
 
 func (s *Service) CreateStorage(ctx context.Context, name, storageType string, options api.StorageCreateOptions) (*Storage, error) {
@@ -30,7 +30,7 @@ func (s *Service) CreateStorage(ctx context.Context, name, storageType string, o
 	if err := s.restclient.Post(ctx, "/storage", options, nil, &storage); err != nil {
 		return nil, err
 	}
-	return &Storage{restclient: s.restclient, Storage: storage}, nil
+	return &Storage{Service: *s, Storage: storage}, nil
 }
 
 func (s *Storage) Delete(ctx context.Context) error {
@@ -89,4 +89,18 @@ func (s *Storage) Upload(ctx context.Context, option api.StorageUpload, file io.
 		return err
 	}
 	return nil
+}
+
+func (s *Storage) Download(ctx context.Context, option api.StorageDownload) (err error) {
+	option.Node = s.Node
+	option.Storage = s.Storage.Storage
+	var taskid *string
+
+	if taskid, err = s.restclient.DownloadToStorage(ctx, option); err != nil {
+		return
+	}
+	if err := s.EnsureTaskDone(ctx, s.Node, *taskid); err != nil {
+		return
+	}
+	return
 }

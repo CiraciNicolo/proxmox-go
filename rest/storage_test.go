@@ -119,3 +119,47 @@ func (s *TestSuite) TestCreateUploadDeleteStorage() {
 		s.T().Fatalf("failed to delete storage(name=%s): %v", testStorageName, err)
 	}
 }
+
+func (s *TestSuite) TestCreateDownloadDeleteStorage() {
+	testStorageName := "test-upload-proxmox-go"
+	s.EnsureNoStorage(testStorageName)
+
+	// create
+	mkdir := true
+	testOptions := api.StorageCreateOptions{
+		Content: "images,iso",
+		Mkdir:   &mkdir,
+		Path:    "/var/lib/vz/test",
+	}
+	storage, err := s.restclient.CreateStorage(context.TODO(), testStorageName, "dir", testOptions)
+	if err != nil {
+		s.T().Fatalf("failed to create storage(name=%s): %v", testStorageName, err)
+	}
+	s.T().Logf("create storage: %v", *storage)
+	time.Sleep(2 * time.Second)
+
+	if err != nil {
+		s.T().Fatalf("failed to get nodes: %v", err)
+	}
+
+	node, err := s.restclient.GetLocalNode(context.TODO())
+	uploadOptions := api.StorageDownload{
+		Content:  "iso",
+		Filename: "tlc.iso",
+		Node:     node.Name,
+		Storage:  testStorageName,
+		Url:      "http://tinycorelinux.net/14.x/x86/release/Core-current.iso",
+	}
+
+	_, err = s.restclient.DownloadToStorage(context.TODO(), uploadOptions)
+	if err != nil {
+		s.T().Fatalf("failed to download to storage(name=%s): %v", testStorageName, err)
+	}
+	time.Sleep(30 * time.Second)
+
+	// delete
+	err = s.restclient.DeleteStorage(context.TODO(), testStorageName)
+	if err != nil {
+		s.T().Fatalf("failed to delete storage(name=%s): %v", testStorageName, err)
+	}
+}
