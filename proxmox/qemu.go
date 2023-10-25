@@ -129,6 +129,15 @@ func (c *VirtualMachine) GetConfig(ctx context.Context) (*api.VirtualMachineConf
 	return c.config, err
 }
 
+func (c *VirtualMachine) SetConfig(ctx context.Context, config api.VirtualMachineConfig) error {
+	err := c.restclient.SetVirtualMachineConfig(ctx, c.Node, c.VM.VMID, config)
+	if err != nil {
+		return err
+	}
+	c.config = &config
+	return nil
+}
+
 func (c *VirtualMachine) GetOSInfo(ctx context.Context) (*api.OSInfo, error) {
 	var osInfo *api.OSInfo
 	path := fmt.Sprintf("/nodes/%s/qemu/%d/agent/get-osinfo", c.Node, c.VM.VMID)

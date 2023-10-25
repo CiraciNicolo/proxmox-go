@@ -57,6 +57,15 @@ func (c *RESTClient) GetVirtualMachineConfig(ctx context.Context, node string, v
 	return config, nil
 }
 
+func (c *RESTClient) SetVirtualMachineConfig(ctx context.Context, node string, vmid int, config api.VirtualMachineConfig) error {
+	path := fmt.Sprintf("/nodes/%s/qemu/%d/config", node, vmid)
+	config.VMGenID = "" // Value should not be set
+	if err := c.Put(ctx, path, &config, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *RESTClient) GetVirtualMachineStatus(ctx context.Context, node string, vmid int) (*api.ProcessStatus, error) {
 	path := fmt.Sprintf("/nodes/%s/qemu/%d/status", node, vmid)
 	var status *api.ProcessStatus

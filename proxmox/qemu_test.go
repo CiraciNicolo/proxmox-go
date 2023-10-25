@@ -66,3 +66,18 @@ func (s *TestSuite) TestGetConfig() {
 	}
 	s.T().Logf("get vm config: %v", *config)
 }
+
+func (s *TestSuite) TestSetConfig() {
+	_, vm := s.getTestVirtualMachine()
+	config, err := vm.GetConfig(context.TODO())
+	if err != nil {
+		s.T().Fatalf("failed to get vm config: %v", err)
+	}
+	s.T().Logf("get vm config: %v", *config)
+
+	config.Description = "VM Updated"
+	err = vm.SetConfig(context.TODO(), *config)
+	if err != nil {
+		s.T().Fatalf("failed to set vm: %v", err)
+	}
+}

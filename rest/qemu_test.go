@@ -43,3 +43,19 @@ func (s *TestSuite) TestGetVirtualMachineConfig() {
 	}
 	s.T().Logf("get vm config: %v", *config)
 }
+
+func (s *TestSuite) TestSetVirtualMachineConfig() {
+	nodeName := s.GetTestNode().Node
+	vmid := s.GetTestVM().VMID
+	config, err := s.restclient.GetVirtualMachineConfig(context.TODO(), nodeName, vmid)
+	if err != nil {
+		s.T().Fatalf("failed to get vm: %v", err)
+	}
+	s.T().Logf("get vm config: %v", *config)
+
+	config.Description = "VM Updated"
+	err = s.restclient.SetVirtualMachineConfig(context.TODO(), nodeName, vmid, *config)
+	if err != nil {
+		s.T().Fatalf("failed to get vm: %v", err)
+	}
+}
