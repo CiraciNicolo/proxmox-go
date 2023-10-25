@@ -54,6 +54,7 @@ func (c *RESTClient) DeleteStorage(ctx context.Context, name string) error {
 func (c *RESTClient) UploadToStorage(ctx context.Context, options api.StorageUpload, file io.Reader) error {
 	var buf bytes.Buffer
 	var fileSize int64
+	var streaming = false
 	body := Body{}
 
 	if f, s := file.(*os.File); s {
@@ -62,8 +63,7 @@ func (c *RESTClient) UploadToStorage(ctx context.Context, options api.StorageUpl
 			return errors.Wrap(err, "unable to get file info")
 		}
 		fileSize = fs.Size()
-	} else {
-		return errors.New("unable to inspect file")
+		streaming = true
 	}
 
 	writer := multipart.NewWriter(&buf)
@@ -72,26 +72,39 @@ func (c *RESTClient) UploadToStorage(ctx context.Context, options api.StorageUpl
 		return errors.Wrap(err, "unable to set content type")
 	}
 
-	_, err = writer.CreateFormFile("filename", options.Filename)
+	fw, err := writer.CreateFormFile("filename", options.Filename)
 	if err != nil {
 		return errors.Wrap(err, "unable to set filename")
 	}
 
-	headerSize := buf.Len()
-	body.ContentType = writer.FormDataContentType()
+	if streaming {
+		headerSize := buf.Len()
 
-	err = writer.Close()
-	if err != nil {
-		return errors.Wrap(err, "unable to close writer")
+		err = writer.Close()
+		if err != nil {
+			return errors.Wrap(err, "unable to close writer")
+		}
+
+		body.ContentLength = int64(buf.Len()) + fileSize
+		body.Reader = io.MultiReader(
+			bytes.NewReader(buf.Bytes()[:headerSize]),
+			file,
+			bytes.NewReader(buf.Bytes()[headerSize:]),
+		)
+
+	} else {
+		_, err = io.Copy(fw, file)
+		if err != nil {
+			return err
+		}
+
+		err = writer.Close()
+		if err != nil {
+			return errors.Wrap(err, "unable to close writer")
+		}
 	}
 
-	body.Reader = io.MultiReader(
-		bytes.NewReader(buf.Bytes()[:headerSize]),
-		file,
-		bytes.NewReader(buf.Bytes()[headerSize:]),
-	)
-	body.ContentLength = int64(buf.Len()) + fileSize
-
+	body.ContentType = writer.FormDataContentType()
 	path := fmt.Sprintf("/nodes/%s/storage/%s/upload", options.Node, options.Storage)
 	if err := c.Post(ctx, path, options, &body, nil); err != nil {
 		return err
