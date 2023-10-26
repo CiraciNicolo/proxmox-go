@@ -3,9 +3,7 @@ package proxmox
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/sp-yduck/proxmox-go/api"
-	"github.com/sp-yduck/proxmox-go/rest"
 	"io"
 )
 
@@ -24,10 +22,8 @@ func (s *Service) Storage(ctx context.Context, name string) (*Storage, error) {
 }
 
 func (s *Service) CreateStorage(ctx context.Context, name, storageType string, options api.StorageCreateOptions) (*Storage, error) {
-	var storage *api.Storage
-	options.Storage = name
-	options.StorageType = storageType
-	if err := s.restclient.Post(ctx, "/storage", options, nil, &storage); err != nil {
+	storage, err := s.restclient.CreateStorage(ctx, name, storageType, options)
+	if err != nil {
 		return nil, err
 	}
 	return &Storage{Service: *s, Storage: storage}, nil
@@ -38,44 +34,43 @@ func (s *Storage) Delete(ctx context.Context) error {
 }
 
 func (s *Storage) GetContents(ctx context.Context) ([]*api.StorageContent, error) {
-	var contents []*api.StorageContent
-	if s.Node == "" {
-		return nil, errors.New("Node must not be empty")
-	}
-	path := fmt.Sprintf("/nodes/%s/storage/%s/content", s.Node, s.Storage.Storage)
-	if err := s.restclient.Get(ctx, path, &contents); err != nil {
-		return nil, err
-	}
-	return contents, nil
-}
-
-func (s *Storage) GetContent(ctx context.Context, volumeID string) (*api.StorageContent, error) {
-	contents, err := s.GetContents(ctx)
+	err := ensureStorage(s)
 	if err != nil {
 		return nil, err
 	}
-	for _, content := range contents {
-		if content.VolID == volumeID {
-			return content, nil
-		}
+
+	return s.restclient.GetContents(ctx, s.Node, s.Storage.Storage)
+}
+
+func (s *Storage) GetContent(ctx context.Context, volumeID string) (*api.StorageContent, error) {
+	err := ensureStorage(s)
+	if err != nil {
+		return nil, err
 	}
-	return nil, rest.NotFoundErr
+
+	return s.restclient.GetContent(ctx, s.Node, s.Storage.Storage, volumeID)
 }
 
 func (s *Storage) GetVolume(ctx context.Context, volumeID string) (*api.StorageVolume, error) {
-	path := fmt.Sprintf("/nodes/%s/storage/%s/content/%s", s.Node, s.Storage.Storage, volumeID)
-	var volume *api.StorageVolume
-	if err := s.restclient.Get(ctx, path, &volume); err != nil {
+	err := ensureStorage(s)
+	if err != nil {
 		return nil, err
 	}
-	return volume, nil
+
+	return s.restclient.GetVolume(ctx, s.Node, s.Storage.Storage, volumeID)
 }
 
-// DeleteVolume TODO: taskid
 func (s *Storage) DeleteVolume(ctx context.Context, volumeID string) error {
-	path := fmt.Sprintf("/nodes/%s/storage/%s/content/%s", s.Node, s.Storage.Storage, volumeID)
-	var taskid string
-	if err := s.restclient.Delete(ctx, path, nil, &taskid); err != nil {
+	err := ensureStorage(s)
+	if err != nil {
+		return err
+	}
+	var taskid *string
+
+	if taskid, err = s.restclient.DeleteVolume(ctx, s.Node, s.Storage.Storage, volumeID); err != nil {
+		return err
+	}
+	if err = s.EnsureTaskDone(ctx, s.Node, *taskid); err != nil {
 		return err
 	}
 	return nil
@@ -104,5 +99,15 @@ func (s *Storage) Download(ctx context.Context, option api.StorageDownload) erro
 		return err
 	}
 
+	return nil
+}
+
+func ensureStorage(s *Storage) error {
+	if s.Node == "" {
+		return errors.New("Node must not be empty")
+	}
+	if s.Storage.Storage == "" {
+		return errors.New("Storage not specified")
+	}
 	return nil
 }

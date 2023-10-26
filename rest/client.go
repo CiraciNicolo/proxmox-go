@@ -37,9 +37,10 @@ type TicketRequest struct {
 type ClientOption func(*RESTClient)
 
 type Body struct {
-	ContentType   string
-	ContentLength int64
-	Reader        io.Reader
+	ContentType     string
+	ContentLength   int64
+	StreamingUpload bool
+	Reader          io.Reader
 }
 
 func NewRESTClient(baseUrl string, opts ...ClientOption) (*RESTClient, error) {
@@ -125,7 +126,9 @@ func (c *RESTClient) Do(ctx context.Context, httpMethod, urlPath string, req int
 		httpReq.Header.Add("Content-Type", "application/json")
 	} else {
 		httpReq.Header.Add("Content-Type", body.ContentType)
-		httpReq.ContentLength = body.ContentLength
+		if body.StreamingUpload {
+			httpReq.ContentLength = body.ContentLength
+		}
 	}
 
 	httpRsp, err := c.httpClient.Do(httpReq)

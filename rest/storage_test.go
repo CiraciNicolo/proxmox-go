@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -102,6 +103,8 @@ func (s *TestSuite) TestCreateUploadDeleteStorage() {
 		Node:     node.Name,
 		Storage:  testStorageName,
 	}
+
+	volumeID := fmt.Sprintf("%s:iso/%s", testStorageName, uploadOptions.Filename)
 	f, err := os.Open("../tlc.iso")
 	if err != nil {
 		s.T().Fatalf("failed to open file(name=%s): %v", testStorageName, err)
@@ -113,7 +116,9 @@ func (s *TestSuite) TestCreateUploadDeleteStorage() {
 	}
 	time.Sleep(2 * time.Second)
 
-	// delete
+	_, err = s.restclient.DeleteVolume(context.TODO(), node.Name, testStorageName, volumeID)
+	time.Sleep(2 * time.Second)
+
 	err = s.restclient.DeleteStorage(context.TODO(), testStorageName)
 	if err != nil {
 		s.T().Fatalf("failed to delete storage(name=%s): %v", testStorageName, err)
@@ -151,13 +156,16 @@ func (s *TestSuite) TestCreateDownloadDeleteStorage() {
 		Url:      "http://tinycorelinux.net/14.x/x86/release/Core-current.iso",
 	}
 
+	volumeID := fmt.Sprintf("%s:iso/%s", testStorageName, uploadOptions.Filename)
 	_, err = s.restclient.DownloadToStorage(context.TODO(), uploadOptions)
 	if err != nil {
 		s.T().Fatalf("failed to download to storage(name=%s): %v", testStorageName, err)
 	}
 	time.Sleep(30 * time.Second)
 
-	// delete
+	_, err = s.restclient.DeleteVolume(context.TODO(), node.Name, testStorageName, volumeID)
+	time.Sleep(2 * time.Second)
+
 	err = s.restclient.DeleteStorage(context.TODO(), testStorageName)
 	if err != nil {
 		s.T().Fatalf("failed to delete storage(name=%s): %v", testStorageName, err)

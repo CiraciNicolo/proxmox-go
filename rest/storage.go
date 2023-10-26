@@ -50,11 +50,50 @@ func (c *RESTClient) DeleteStorage(ctx context.Context, name string) error {
 	return nil
 }
 
+func (c *RESTClient) GetContents(ctx context.Context, node string, storage string) ([]*api.StorageContent, error) {
+	var contents []*api.StorageContent
+	path := fmt.Sprintf("/nodes/%s/storage/%s/content", node, storage)
+	if err := c.Get(ctx, path, &contents); err != nil {
+		return nil, err
+	}
+	return contents, nil
+}
+
+func (c *RESTClient) GetContent(ctx context.Context, node string, storage string, volumeID string) (*api.StorageContent, error) {
+	contents, err := c.GetContents(ctx, node, storage)
+	if err != nil {
+		return nil, err
+	}
+	for _, content := range contents {
+		if content.VolID == volumeID {
+			return content, nil
+		}
+	}
+	return nil, NotFoundErr
+}
+
+func (c *RESTClient) GetVolume(ctx context.Context, node string, storage string, volumeID string) (*api.StorageVolume, error) {
+	path := fmt.Sprintf("/nodes/%s/storage/%s/content/%s", node, storage, volumeID)
+	var volume *api.StorageVolume
+	if err := c.Get(ctx, path, &volume); err != nil {
+		return nil, err
+	}
+	return volume, nil
+}
+
+func (c *RESTClient) DeleteVolume(ctx context.Context, node string, storage string, volumeID string) (*string, error) {
+	path := fmt.Sprintf("/nodes/%s/storage/%s/content/%s", node, storage, volumeID)
+	var upid *string
+	if err := c.Delete(ctx, path, nil, &upid); err != nil {
+		return nil, err
+	}
+	return upid, nil
+}
+
 // UploadToStorage TODO: Add other parameters such as checksum
 func (c *RESTClient) UploadToStorage(ctx context.Context, options api.StorageUpload, file io.Reader) error {
 	var buf bytes.Buffer
 	var fileSize int64
-	var streaming = false
 	body := Body{}
 
 	if f, s := file.(*os.File); s {
@@ -63,7 +102,7 @@ func (c *RESTClient) UploadToStorage(ctx context.Context, options api.StorageUpl
 			return errors.Wrap(err, "unable to get file info")
 		}
 		fileSize = fs.Size()
-		streaming = true
+		body.StreamingUpload = true
 	}
 
 	writer := multipart.NewWriter(&buf)
@@ -77,7 +116,7 @@ func (c *RESTClient) UploadToStorage(ctx context.Context, options api.StorageUpl
 		return errors.Wrap(err, "unable to set filename")
 	}
 
-	if streaming {
+	if body.StreamingUpload {
 		headerSize := buf.Len()
 
 		err = writer.Close()
@@ -102,6 +141,8 @@ func (c *RESTClient) UploadToStorage(ctx context.Context, options api.StorageUpl
 		if err != nil {
 			return errors.Wrap(err, "unable to close writer")
 		}
+
+		body.Reader = &buf
 	}
 
 	body.ContentType = writer.FormDataContentType()
