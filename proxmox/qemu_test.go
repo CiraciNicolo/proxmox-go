@@ -81,3 +81,15 @@ func (s *TestSuite) TestSetConfig() {
 		s.T().Fatalf("failed to set vm: %v", err)
 	}
 }
+
+func (s *TestSuite) TestVirtualMachineStatus() (*api.Node, *VirtualMachine) {
+	_, vm := s.getTestVirtualMachine()
+	status, err := vm.GetStatus(context.TODO())
+	s.T().Log(err)
+	if err != nil {
+		s.T().Fatalf("failed to get vm status: %v", err)
+	}
+
+	s.T().Logf("get vm status: %v", *status)
+	return nil, vm
+}

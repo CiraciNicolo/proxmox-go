@@ -66,9 +66,9 @@ func (c *RESTClient) SetVirtualMachineConfig(ctx context.Context, node string, v
 	return nil
 }
 
-func (c *RESTClient) GetVirtualMachineStatus(ctx context.Context, node string, vmid int) (*api.ProcessStatus, error) {
-	path := fmt.Sprintf("/nodes/%s/qemu/%d/status", node, vmid)
-	var status *api.ProcessStatus
+func (c *RESTClient) GetVirtualMachineStatus(ctx context.Context, node string, vmid int) (*api.VirtualMachineStatus, error) {
+	path := fmt.Sprintf("/nodes/%s/qemu/%d/status/current", node, vmid)
+	var status *api.VirtualMachineStatus
 	if err := c.Get(ctx, path, &status); err != nil {
 		return nil, err
 	}

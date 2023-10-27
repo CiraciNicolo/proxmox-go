@@ -147,10 +147,6 @@ func (c *VirtualMachine) GetOSInfo(ctx context.Context) (*api.OSInfo, error) {
 	return osInfo, nil
 }
 
-// size : The new size. With the `+` sign the value is added to the actual size of the volume
-// and without it, the value is taken as an absolute one.
-// Shrinking disk size is not supported.
-// size format : \+?\d+(\.\d+)?[KMGT]?j
 func (c *VirtualMachine) ResizeVolume(ctx context.Context, disk, size string) error {
 	path := fmt.Sprintf("/nodes/%s/qemu/%d/resize", c.Node, c.VM.VMID)
 	request := make(map[string]interface{})
@@ -161,6 +157,10 @@ func (c *VirtualMachine) ResizeVolume(ctx context.Context, disk, size string) er
 		return err
 	}
 	return nil
+}
+
+func (c *VirtualMachine) GetStatus(ctx context.Context) (*api.VirtualMachineStatus, error) {
+	return c.restclient.GetVirtualMachineStatus(ctx, c.Node, c.VM.VMID)
 }
 
 func (c *VirtualMachine) Start(ctx context.Context, option api.VirtualMachineStartOption) error {

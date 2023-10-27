@@ -30,6 +30,25 @@ const (
 	ProcessStatusPaused  ProcessStatus = "paused"
 )
 
+type VirtualMachineStatus struct {
+	Ha             interface{}   `json:"ha,omitempty"`
+	Status         ProcessStatus `json:"status,omitempty"`
+	VMID           int           `json:"vmid,omitempty"`
+	Agent          bool          `json:"agent,omitempty"`
+	CPUs           int           `json:"cpus,omitempty"`
+	Lock           string        `json:"lock,omitempty"`
+	MaxDisk        int           `json:"maxdisk,omitempty"`
+	MaxMem         int           `json:"maxmem,omitempty"`
+	Name           string        `json:"name,omitempty"`
+	PID            int           `json:"pid,omitempty"`
+	QMPStatus      string        `json:"qmpstatus,omitempty"`
+	RunningMachine string        `json:"running-machine,omitempty"`
+	RunningQEMU    string        `json:"running-qemu,omitempty"`
+	Spice          bool          `json:"spice,omitempty"`
+	Tags           string        `json:"tags,omitempty"`
+	Uptime         int           `json:"uptime,omitempty"`
+}
+
 type Arch string
 type OSType string
 type ScsiHw string
