@@ -3,38 +3,39 @@ package proxmox
 import (
 	"context"
 	"errors"
-	"time"
-
 	"github.com/sp-yduck/proxmox-go/api"
-	"github.com/sp-yduck/proxmox-go/rest"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"time"
 )
 
 const (
 	TaskStatusOK = "OK"
 )
 
-func (s *Service) MustGetTask(ctx context.Context, node string, upid string) (*api.Task, error) {
-	for i := 0; i < 10; i++ {
+func (s *Service) EnsureTaskDone(ctx context.Context, node, upid string) error {
+	checkVMCompleted := func() (bool, error) {
 		task, err := s.restclient.GetTask(ctx, node, upid)
 		if err != nil {
-			if rest.IsNotFound(err) {
-				time.Sleep(time.Second * 1)
-				continue
-			}
-			return nil, err
+			return false, err
 		}
-		return task, nil
+		if task.Status == api.TaskStatusRunning {
+			return false, nil
+		}
+		return task.Exitstatus == TaskStatusOK, nil
 	}
-	return nil, errors.New("task wait deadline exceeded")
-}
 
-func (s *Service) EnsureTaskDone(ctx context.Context, node, upid string) error {
-	task, err := s.MustGetTask(ctx, node, upid)
+	backoff := wait.Backoff{
+		Duration: time.Second,
+		Factor:   1.2,
+		Jitter:   0,
+		Steps:    32,
+		Cap:      16 * time.Minute,
+	}
+
+	err := wait.ExponentialBackoff(backoff, checkVMCompleted)
 	if err != nil {
-		return err
+		return errors.Join(err, errors.New("task wait deadline exceeded"))
 	}
-	if task.Status != TaskStatusOK {
-		return errors.New(task.Status)
-	}
+
 	return nil
 }

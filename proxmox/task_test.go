@@ -6,13 +6,13 @@ import (
 	"github.com/sp-yduck/proxmox-go/api"
 )
 
-func (s *TestSuite) TestMustGetTask() {
-	testNode, testTask := s.getTestTask()
-	task, err := s.service.MustGetTask(context.TODO(), testNode.Node, testTask.UPID)
+func (s *TestSuite) getTestTask() (*api.Node, *api.Tasks) {
+	node := s.getTestNode()
+	tasks, err := s.service.restclient.GetTasks(context.TODO(), node.Node)
 	if err != nil {
-		s.T().Fatalf("failed to get task: %v", err)
+		s.T().Fatalf("failed to get tasks: %v", err)
 	}
-	s.Assert().Equal(*task, *testTask)
+	return node, tasks[0]
 }
 
 func (s *TestSuite) TestEnsureTaskDone() {
@@ -21,13 +21,4 @@ func (s *TestSuite) TestEnsureTaskDone() {
 	if err != nil {
 		s.T().Fatalf("failed to get task: %v", err)
 	}
-}
-
-func (s *TestSuite) getTestTask() (*api.Node, *api.Task) {
-	node := s.getTestNode()
-	tasks, err := s.service.restclient.GetTasks(context.TODO(), node.Node)
-	if err != nil {
-		s.T().Fatalf("failed to get tasks: %v", err)
-	}
-	return node, tasks[0]
 }

@@ -7,8 +7,8 @@ import (
 	"github.com/sp-yduck/proxmox-go/api"
 )
 
-func (c *RESTClient) GetTasks(ctx context.Context, node string) ([]*api.Task, error) {
-	var tasks []*api.Task
+func (c *RESTClient) GetTasks(ctx context.Context, node string) ([]*api.Tasks, error) {
+	var tasks []*api.Tasks
 	path := fmt.Sprintf("/nodes/%s/tasks", node)
 	if err := c.Get(ctx, path, &tasks); err != nil {
 		return nil, err
@@ -17,14 +17,11 @@ func (c *RESTClient) GetTasks(ctx context.Context, node string) ([]*api.Task, er
 }
 
 func (c *RESTClient) GetTask(ctx context.Context, node string, upid string) (*api.Task, error) {
-	tasks, err := c.GetTasks(ctx, node)
-	if err != nil {
+	var task *api.Task
+	path := fmt.Sprintf("/nodes/%s/tasks/%s/status", node, upid)
+	if err := c.Get(ctx, path, &task); err != nil {
 		return nil, err
 	}
-	for _, task := range tasks {
-		if task.UPID == upid {
-			return task, nil
-		}
-	}
-	return nil, NotFoundErr
+
+	return task, nil
 }

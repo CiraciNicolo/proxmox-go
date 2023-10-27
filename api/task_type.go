@@ -1,8 +1,19 @@
 package api
 
 type Task struct {
-	Endtime int `json:"endtime"`
-	// Id        string `json:"id,omitempty"`
+	Id         string     `json:"id,omitempty"`
+	Node       string     `json:"node,omitempty"`
+	PID        int        `json:"pid"`
+	StartTime  int        `json:"starttime"`
+	Status     TaskStatus `json:"status"`
+	Type       string     `json:"type"`
+	UPID       string     `json:"upid"`
+	User       string     `json:"user"`
+	Exitstatus string     `json:"exitstatus"`
+}
+
+type Tasks struct {
+	Endtime   int    `json:"endtime"`
 	PID       int    `json:"pid"`
 	PStart    int    `json:"pstart"`
 	StartTime int    `json:"starttime"`
@@ -12,7 +23,9 @@ type Task struct {
 	User      string `json:"user"`
 }
 
-type TaskStatus struct {
-	Exitstatus string `json:"exitstatus"`
-	Id         string `json:"id"`
-}
+type TaskStatus string
+
+const (
+	TaskStatusRunning TaskStatus = "running"
+	TaskStatusStopped TaskStatus = "stopped"
+)
