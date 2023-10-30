@@ -48,6 +48,15 @@ func (c *RESTClient) DeleteVirtualMachine(ctx context.Context, node string, vmid
 	return upid, nil
 }
 
+func (c *RESTClient) CloneVirtualMachine(ctx context.Context, node string, vmId int, options api.VirtualMachineCloneOptions) (*string, error) {
+	path := fmt.Sprintf("/nodes/%s/qemu/%d/clone", node, vmId)
+	var upid *string
+	if err := c.Post(ctx, path, options, nil, &upid); err != nil {
+		return nil, err
+	}
+	return upid, nil
+}
+
 func (c *RESTClient) GetVirtualMachineConfig(ctx context.Context, node string, vmid int) (*api.VirtualMachineConfig, error) {
 	path := fmt.Sprintf("/nodes/%s/qemu/%d/config", node, vmid)
 	var config *api.VirtualMachineConfig

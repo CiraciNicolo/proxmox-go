@@ -82,7 +82,7 @@ func (s *TestSuite) TestSetConfig() {
 	}
 }
 
-func (s *TestSuite) TestVirtualMachineStatus() (*api.Node, *VirtualMachine) {
+func (s *TestSuite) TestVirtualMachineStatus() {
 	_, vm := s.getTestVirtualMachine()
 	status, err := vm.GetStatus(context.TODO())
 	s.T().Log(err)
@@ -91,5 +91,31 @@ func (s *TestSuite) TestVirtualMachineStatus() (*api.Node, *VirtualMachine) {
 	}
 
 	s.T().Logf("get vm status: %v", *status)
-	return nil, vm
+}
+
+func (s *TestSuite) TestCloneVirtualMachine() {
+	testNode := "atm-prx-bld10"
+	testVMID, err := s.service.RESTClient().GetNextID(context.TODO())
+	s.T().Log(err)
+	if err != nil {
+		s.T().Fatalf("failed to get vm status: %v", err)
+	}
+
+	options := api.VirtualMachineCloneOptions{
+		NewID: testVMID,
+		Full:  true,
+	}
+	instance, err := s.service.CloneVirtualMachine(context.TODO(), testNode, 138, options)
+	s.T().Log(err)
+	if err != nil {
+		s.T().Fatalf("failed to get vm status: %v", err)
+	}
+
+	s.T().Logf("instance %v", instance)
+
+	err = instance.Delete(context.TODO())
+	s.T().Log(err)
+	if err != nil {
+		s.T().Fatalf("failed to get vm status: %v", err)
+	}
 }

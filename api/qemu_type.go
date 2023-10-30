@@ -439,6 +439,27 @@ type VirtualMachineCreateOptions struct {
 	WatchDog       string `json:"watchdog,omitempty"`
 }
 
+type VirtualMachineCloneFormatOption string
+
+const (
+	RawCloneFormat VirtualMachineCloneFormatOption = "raw"
+	QCow2          VirtualMachineCloneFormatOption = "qcow2"
+	VMDK           VirtualMachineCloneFormatOption = "vmdk"
+)
+
+type VirtualMachineCloneOptions struct {
+	NewID       int                             `json:"newid,omitempty"`
+	BWLimit     int                             `json:"bwlimit,omitempty"`
+	Description string                          `json:"description,omitempty"`
+	Format      VirtualMachineCloneFormatOption `json:"format,omitempty"`
+	Full        bool                            `json:"full,omitempty"`
+	Name        string                          `json:"name,omitempty"`
+	Pool        string                          `json:"pool,omitempty"`
+	SnapName    string                          `json:"snapname,omitempty"`
+	Storage     string                          `json:"storage,omitempty"`
+	Target      string                          `json:"target,omitempty"`
+}
+
 type VirtualMachineConfig struct {
 	// Enable/disable ACPI.
 	ACPI int8 `json:"acpi,omitempty"`

@@ -69,6 +69,17 @@ func (s *Service) CreateVirtualMachine(ctx context.Context, node string, vmid in
 	return s.VirtualMachine(ctx, vmid)
 }
 
+func (s *Service) CloneVirtualMachine(ctx context.Context, node string, vmid int, option api.VirtualMachineCloneOptions) (*VirtualMachine, error) {
+	taskid, err := s.restclient.CloneVirtualMachine(ctx, node, vmid, option)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.EnsureTaskDone(ctx, node, *taskid); err != nil {
+		return nil, err
+	}
+	return s.VirtualMachine(ctx, option.NewID)
+}
+
 // VirtualMachineFromUUID attempts to find virtual machine based on SMBIOS UUID. It will ignore any error that prevents
 // it from inspecting additional virtual machines (e.g. offline node, vm config not accessible, malformed uuids)
 func (s *Service) VirtualMachineFromUUID(ctx context.Context, uuid string) (*VirtualMachine, error) {
